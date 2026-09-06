@@ -18,9 +18,11 @@ It covers two cases:
 - **A list of people** - search results, "more profiles for you", connections.
   Every profile rendered on the page comes back in one click.
 - **One person's profile** - when the open page is `linkedin.com/in/<slug>`,
-  that person leads the results, with the company taken from the top card's
-  "Current company" control rather than guessed from the headline. The other
-  profiles the page links to follow.
+  you get that person and nobody else: the sidebar suggestions, mutual
+  connections and "people also viewed" links the page is full of stay out of
+  the way. Their company comes from the top card's "Current company" control
+  rather than being guessed from the headline. A checkbox reveals everyone
+  else on the page when you do want them.
 
 Results can be copied for a spreadsheet (tab-separated, so Google Sheets and
 Excel split them into columns on paste) or downloaded as a CSV file. The columns

@@ -21,7 +21,8 @@
   // aria-label wrappers LinkedIn puts around a name, e.g.
   // "View Jane Doe's profile", "Jane Doe's graphic link", "Jane Doe, #1".
   const ARIA_PREFIX = /^(?:view|open|go to|see)\s+/i;
-  const ARIA_SUFFIX = /['’]s\s+(?:profile|graphic link|page|photo|picture|verification badge).*$/i;
+  const ARIA_SUFFIX =
+    /['’]s?\s+(?:profile|graphic link|page|photo|picture|verification badge).*$/i;
 
   // Connection-degree markers LinkedIn appends to a name ("Jane Doe · 2nd").
   const DEGREE = /\s*[\u2022\u00b7|,]?\s*(?:\d(?:st|nd|rd|th)\+?|\d+(?:st|nd|rd|th)\s*degree(?:\s+connection)?)\s*$/i;
@@ -359,7 +360,14 @@
     const parts = splitHeadline(headline);
     const company = currentCompany(topCard) || parts.company;
 
-    return { name, headline, designation: parts.designation, company, url };
+    return {
+      name,
+      headline,
+      designation: parts.designation,
+      company,
+      url,
+      owner: true,
+    };
   };
 
   const results = [];
@@ -413,6 +421,7 @@
         designation: parts.designation,
         company: parts.company,
         url,
+        owner: false,
       });
     } catch (err) {
       // Malformed node - skip it and keep going.
@@ -420,5 +429,10 @@
     }
   }
 
-  return { ok: true, profiles: results, pageUrl: location.href };
+  return {
+    ok: true,
+    profiles: results,
+    isProfilePage: /^\/in\//.test(location.pathname),
+    pageUrl: location.href,
+  };
 })();

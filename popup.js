@@ -12,12 +12,21 @@ const copyButton = document.getElementById("copy");
 const downloadButton = document.getElementById("download");
 const statusEl = document.getElementById("status");
 const resultsEl = document.getElementById("results");
+const scopeRow = document.getElementById("scope");
+const includeAll = document.getElementById("include-all");
+const scopeCount = document.getElementById("scope-count");
 
 /**
  * @type {{name: string, url: string, company: string, designation: string,
  *   headline: string}[]}
  */
 let profiles = [];
+
+/** Every profile the last extraction found, before the owner-only filter. */
+let allProfiles = [];
+
+/** True when the tab is one person's profile rather than a list of people. */
+let isProfilePage = false;
 
 function setStatus(message, isError = false) {
   statusEl.textContent = message;
@@ -27,6 +36,43 @@ function setStatus(message, isError = false) {
 function setExportsEnabled(enabled) {
   copyButton.disabled = !enabled;
   downloadButton.disabled = !enabled;
+}
+
+/**
+ * On somebody's profile, that person is the point of the click - the sidebar
+ * suggestions and mutual connections the page also links to are noise unless
+ * asked for. Everywhere else (search results, connections) every profile counts.
+ */
+function applyScope() {
+  const owner = allProfiles.find((p) => p.owner);
+
+  if (isProfilePage && owner && !includeAll.checked) {
+    profiles = [owner];
+  } else {
+    profiles = allProfiles;
+  }
+
+  render();
+  reportCount();
+}
+
+function reportCount() {
+  if (profiles.length === 0) {
+    setStatus("No profile links found on the rendered page.");
+    return;
+  }
+
+  const others = allProfiles.length - profiles.length;
+  if (others > 0) {
+    setStatus(`This profile only - ${others} others on the page are hidden.`);
+    return;
+  }
+
+  const named = profiles.filter((p) => p.name).length;
+  setStatus(
+    `${profiles.length} profile${profiles.length === 1 ? "" : "s"} found` +
+      (named === profiles.length ? "." : ` (${named} with a name).`)
+  );
 }
 
 function render() {
@@ -193,18 +239,22 @@ async function extract() {
       return;
     }
 
-    profiles = Array.isArray(result.profiles) ? result.profiles : [];
-    render();
+    allProfiles = Array.isArray(result.profiles) ? result.profiles : [];
+    isProfilePage = Boolean(result.isProfilePage);
 
-    if (profiles.length === 0) {
-      setStatus("No profile links found on the rendered page.");
+    // The checkbox only makes sense on a profile page with others to reveal.
+    const owner = allProfiles.find((p) => p.owner);
+    const others = allProfiles.length - (owner ? 1 : 0);
+    const offerScope = isProfilePage && owner && others > 0;
+
+    scopeRow.hidden = !offerScope;
+    if (offerScope) {
+      scopeCount.textContent = String(others);
     } else {
-      const named = profiles.filter((p) => p.name).length;
-      setStatus(
-        `${profiles.length} profile${profiles.length === 1 ? "" : "s"} found` +
-          (named === profiles.length ? "." : ` (${named} with a name).`)
-      );
+      includeAll.checked = false;
     }
+
+    applyScope();
   } catch (err) {
     // Chrome refuses injection on chrome:// pages, the Web Store, PDFs, etc.
     setStatus(
@@ -251,5 +301,6 @@ function handleDownload() {
 }
 
 extractButton.addEventListener("click", extract);
+includeAll.addEventListener("change", applyScope);
 copyButton.addEventListener("click", handleCopy);
 downloadButton.addEventListener("click", handleDownload);

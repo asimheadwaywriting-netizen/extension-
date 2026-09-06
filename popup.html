@@ -79,6 +79,15 @@
         word-break: break-all;
         font-size: 12px;
       }
+      #scope {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 8px;
+        color: var(--muted);
+        cursor: pointer;
+      }
+      #scope input { margin: 0; cursor: pointer; }
       .actions { display: flex; gap: 8px; }
       .actions button { flex: 1; }
       footer {
@@ -94,6 +103,11 @@
     <button id="extract" type="button">Extract profiles from this page</button>
 
     <p id="status" role="status" aria-live="polite"></p>
+
+    <label id="scope" hidden>
+      <input type="checkbox" id="include-all" />
+      Also include the other <span id="scope-count">0</span> profiles on this page
+    </label>
 
     <ul id="results"></ul>
 
