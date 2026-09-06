@@ -28,6 +28,9 @@ let allProfiles = [];
 /** True when the tab is one person's profile rather than a list of people. */
 let isProfilePage = false;
 
+/** The profile URL of the open tab, when the tab is somebody's profile. */
+let ownerUrl = "";
+
 function setStatus(message, isError = false) {
   statusEl.textContent = message;
   statusEl.classList.toggle("error", Boolean(isError));
@@ -43,8 +46,17 @@ function setExportsEnabled(enabled) {
  * suggestions and mutual connections the page also links to are noise unless
  * asked for. Everywhere else (search results, connections) every profile counts.
  */
+function findOwner() {
+  // URL match first: it holds even when the page markup defeats the scraper.
+  if (ownerUrl) {
+    const byUrl = allProfiles.find((p) => p.url === ownerUrl);
+    if (byUrl) return byUrl;
+  }
+  return allProfiles.find((p) => p.owner);
+}
+
 function applyScope() {
-  const owner = allProfiles.find((p) => p.owner);
+  const owner = findOwner();
 
   if (isProfilePage && owner && !includeAll.checked) {
     profiles = [owner];
@@ -195,6 +207,23 @@ async function getActiveTab() {
   return tab || null;
 }
 
+/**
+ * The canonical profile URL for a tab sitting on somebody's profile.
+ * Deriving this from the tab's own address is what makes the owner-only view
+ * reliable - it does not depend on anything being found in the page markup.
+ */
+function profileUrlOf(tabUrl) {
+  if (!tabUrl) return "";
+  try {
+    const parsed = new URL(tabUrl);
+    const match = parsed.pathname.match(/^\/in\/([^/]+)/);
+    if (!match) return "";
+    return `https://www.linkedin.com/in/${decodeURIComponent(match[1])}`;
+  } catch (err) {
+    return "";
+  }
+}
+
 function isLinkedInUrl(url) {
   if (!url) return false;
   try {
@@ -224,6 +253,8 @@ async function extract() {
       return;
     }
 
+    ownerUrl = profileUrlOf(tab.url);
+
     const injection = await chrome.scripting.executeScript({
       target: { tabId: tab.id },
       files: ["content-script.js"],
@@ -240,10 +271,10 @@ async function extract() {
     }
 
     allProfiles = Array.isArray(result.profiles) ? result.profiles : [];
-    isProfilePage = Boolean(result.isProfilePage);
+    isProfilePage = Boolean(result.isProfilePage) || Boolean(ownerUrl);
 
     // The checkbox only makes sense on a profile page with others to reveal.
-    const owner = allProfiles.find((p) => p.owner);
+    const owner = findOwner();
     const others = allProfiles.length - (owner ? 1 : 0);
     const offerScope = isProfilePage && owner && others > 0;
 

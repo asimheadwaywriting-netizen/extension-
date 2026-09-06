@@ -88,8 +88,11 @@
         cursor: pointer;
       }
       #scope input { margin: 0; cursor: pointer; }
+      /* A display rule outranks the hidden attribute - restate it here. */
+      #scope[hidden] { display: none; }
       .actions { display: flex; gap: 8px; }
       .actions button { flex: 1; }
+      .version { opacity: 0.7; }
       footer {
         margin-top: 10px;
         color: var(--muted);
@@ -118,7 +121,7 @@
 
     <footer>
       Reads only what is already rendered in the open tab. No requests, no
-      scrolling, no stored data.
+      scrolling, no stored data. <span class="version">v1.3</span>
     </footer>
 
     <script src="popup.js"></script>

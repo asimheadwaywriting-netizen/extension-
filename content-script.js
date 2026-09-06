@@ -199,7 +199,7 @@
     const blocks = [];
 
     const walk = (node, depth) => {
-      if (depth > 6) return;
+      if (depth > 12) return;
       for (const child of node.children) {
         if (child.tagName === "A" || child.tagName === "BUTTON") continue;
         if (child.querySelector("a, button")) {
@@ -340,7 +340,7 @@
     const url = `https://www.linkedin.com/in/${slug}`;
     const main = document.querySelector("main") || document.body;
 
-    const h1 = main.querySelector("h1");
+    const h1 = main.querySelector("h1") || document.querySelector("h1");
     const name = h1 ? polish(nameFromText(h1) || clean(h1.textContent)) : "";
 
     // The top card is the section around the name; fall back to main.
@@ -383,7 +383,7 @@
   // On a profile page the owner leads, then everyone else the page links to.
   try {
     const owner = profileOwner();
-    if (owner && (owner.name || owner.headline)) {
+    if (owner) {
       seen.set(owner.url, results.length);
       results.push(owner);
     }

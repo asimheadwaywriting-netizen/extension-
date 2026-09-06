@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "LinkedIn Profile Link Extractor",
-  "version": "1.0",
+  "version": "1.3",
   "description": "Extracts names and profile URLs from LinkedIn pages you already have open. Manual trigger only, reads the rendered DOM, makes no network requests.",
   "action": {
     "default_popup": "popup.html",
