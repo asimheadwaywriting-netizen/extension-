@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "LinkedIn Profile Link Extractor",
+  "version": "1.0",
+  "description": "Extracts names and profile URLs from LinkedIn pages you already have open. Manual trigger only, reads the rendered DOM, makes no network requests.",
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "LinkedIn Profile Link Extractor",
+    "default_icon": {
+      "16": "icon.png",
+      "48": "icon.png",
+      "128": "icon.png"
+    }
+  },
+  "icons": {
+    "16": "icon.png",
+    "48": "icon.png",
+    "128": "icon.png"
+  },
+  "permissions": ["activeTab", "scripting", "clipboardWrite"],
+  "host_permissions": ["*://*.linkedin.com/*"]
+}
