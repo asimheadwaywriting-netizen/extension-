@@ -9,11 +9,13 @@ Click the toolbar icon, press **Extract profiles from this page**, and the
 extension injects a one-shot content script into the active tab. That script
 walks the anchors already in the DOM, keeps the ones pointing at
 `linkedin.com/in/<slug>`, strips tracking parameters, pairs each URL with the
-best name it can find nearby, and de-duplicates by URL.
+best name it can find nearby, picks up the headline shown on the result card
+("Director & Chief Executive Officer (CEO) @ Axentra Ltd."), and de-duplicates
+by URL.
 
 Results can be copied for a spreadsheet (tab-separated, so Google Sheets and
-Excel split them into a name column and a url column on paste) or downloaded as
-a `name,url` CSV file.
+Excel split them into name / url / headline columns on paste) or downloaded as a
+`name,url,headline` CSV file.
 
 ## What it deliberately does not do
 
@@ -58,5 +60,12 @@ LinkedIn's class names are obfuscated and rotate, so nothing here matches on
 them. Links are found by `href` pattern (`/in/`), and names are resolved from
 the most stable signals first: the visible `span[aria-hidden="true"]`, then the
 anchor text, then `aria-label` / `title` / image `alt`, then a nearby heading.
-Entries that cannot be parsed are skipped silently; a profile whose name cannot
-be found is still listed with an empty name rather than dropped.
+
+Headlines are read only from genuine result cards (list items), and only from
+text that is not itself a link - so mutual-connection names, "Connect" buttons
+and connection-degree badges stay out. On layouts without cards, such as the
+feed, the headline is left empty rather than guessed at.
+
+Entries that cannot be parsed are skipped silently; a profile whose name or
+headline cannot be found is still listed with that field empty rather than
+dropped.

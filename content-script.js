@@ -150,6 +150,119 @@
     return "";
   };
 
+  // Lines that sit near a name but are never a headline.
+  const HEADLINE_NOISE =
+    /^(?:connect|message|follow|following|pending|invite sent|withdraw|view profile|view full profile|see full profile|status is (?:online|offline|reachable)|premium|influencer|verified|open to work|hiring|\d+(?:st|nd|rd|th)\+?|.*\bmutual connections?\b.*|.*\b(?:followers?|connections?)\b.*)$/i;
+
+  /** True when a line reads like a professional headline rather than chrome. */
+  const looksLikeHeadline = (line) => {
+    if (!line || line.length < 3 || line.length > 300) return false;
+    if (HEADLINE_NOISE.test(line)) return false;
+    if (/^(?:view|open|see|go to)\s+/i.test(line)) return false;
+    if (/^https?:\/\//i.test(line)) return false;
+    if (!/[a-z]/i.test(line)) return false;
+    return true;
+  };
+
+  /**
+   * The result card holding this anchor. Only genuine list items count -
+   * search results, connection lists and "people also viewed" all render as
+   * list items, while a feed post is a loose stack of divs where any nearby
+   * text would be somebody else's. An empty headline beats a wrong one.
+   * Class names are never used: LinkedIn rotates them.
+   */
+  const findCard = (anchor) => {
+    let node = anchor.parentElement;
+    let hops = 0;
+
+    while (node && hops < 8) {
+      if (
+        node.tagName === "LI" ||
+        node.hasAttribute("data-chameleon-result-urn") ||
+        node.getAttribute("role") === "listitem"
+      ) {
+        return node;
+      }
+      node = node.parentElement;
+      hops += 1;
+    }
+    return null;
+  };
+
+  /**
+   * Text blocks inside a card, in document order, skipping anything inside a
+   * link or button - the headline is plain text, while mutual connections,
+   * the name itself and "Connect" are not.
+   */
+  const textBlocks = (card) => {
+    const blocks = [];
+
+    const walk = (node, depth) => {
+      if (depth > 6) return;
+      for (const child of node.children) {
+        if (child.tagName === "A" || child.tagName === "BUTTON") continue;
+        if (child.querySelector("a, button")) {
+          walk(child, depth + 1);
+          continue;
+        }
+        const text = clean(child.innerText || child.textContent);
+        if (text) blocks.push(text);
+      }
+    };
+
+    walk(card, 0);
+    return blocks;
+  };
+
+  /**
+   * The headline is the first meaningful text block in the card
+   * ("Director & Chief Executive Officer (CEO) @ Axentra Ltd."). A "Current:"
+   * summary is the fallback when no headline is rendered.
+   */
+  const resolveHeadline = (anchor, name, url) => {
+    const card = findCard(anchor);
+    if (!card) return "";
+
+    // A card also links the mutual connections it mentions. Only the card's
+    // own profile - its first profile link - may claim the card's headline.
+    const primary = card.querySelector('a[href*="/in/"]');
+    if (
+      primary &&
+      normaliseUrl(primary.getAttribute("href") || primary.href) !== url
+    ) {
+      return "";
+    }
+
+    let currentSummary = "";
+
+    for (const raw of textBlocks(card)) {
+      // polish() strips connection-degree markers, so "· 2nd" becomes empty.
+      const line = polish(raw);
+      if (!line) continue;
+      if (name && line === name) continue;
+
+      // Screen-reader copies repeat the name with a little trailing chrome
+      // ("Sunam Samayet . 2nd degree connection"); a real headline that opens
+      // with the person's own name still carries substance after it.
+      if (name && line.startsWith(name)) {
+        const rest = clean(line.slice(name.length).replace(EDGE_PUNCT, ""));
+        if (rest.length < 25 || !looksLikeHeadline(rest)) continue;
+      }
+
+      const summary = line.match(/^(?:current|past|previous):\s*(.+)$/i);
+      if (summary) {
+        if (!currentSummary && looksLikeHeadline(summary[1])) {
+          currentSummary = clean(summary[1]);
+        }
+        continue;
+      }
+
+      if (looksLikeHeadline(line)) return line;
+    }
+
+    return currentSummary;
+  };
+
   const results = [];
   const seen = new Map(); // url -> index in results
 
@@ -166,16 +279,18 @@
       if (!url) continue;
 
       const name = resolveName(anchor);
+      const headline = resolveHeadline(anchor, name, url);
 
       if (seen.has(url)) {
-        // Keep the first hit, but upgrade it if we only had a URL before.
+        // Keep the first hit, but fill in anything it was missing.
         const existing = results[seen.get(url)];
         if (!existing.name && name) existing.name = name;
+        if (!existing.headline && headline) existing.headline = headline;
         continue;
       }
 
       seen.set(url, results.length);
-      results.push({ name, url });
+      results.push({ name, headline, url });
     } catch (err) {
       // Malformed node - skip it and keep going.
       continue;

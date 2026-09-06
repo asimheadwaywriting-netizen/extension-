@@ -13,7 +13,7 @@ const downloadButton = document.getElementById("download");
 const statusEl = document.getElementById("status");
 const resultsEl = document.getElementById("results");
 
-/** @type {{name: string, url: string}[]} */
+/** @type {{name: string, headline: string, url: string}[]} */
 let profiles = [];
 
 function setStatus(message, isError = false) {
@@ -41,7 +41,14 @@ function render() {
     url.className = "url";
     url.textContent = profile.url;
 
-    item.append(name, url);
+    item.append(name);
+    if (profile.headline) {
+      const headline = document.createElement("span");
+      headline.className = "headline";
+      headline.textContent = profile.headline;
+      item.append(headline);
+    }
+    item.append(url);
     fragment.append(item);
   }
 
@@ -64,7 +71,11 @@ function tsvField(value) {
 }
 
 function tableRows(rows) {
-  return [["name", "url"], ...rows.map((r) => [r.name, r.url])];
+  // headline is appended last so name/url keep the columns they always had.
+  return [
+    ["name", "url", "headline"],
+    ...rows.map((r) => [r.name, r.url, r.headline || ""]),
+  ];
 }
 
 /** For the downloaded .csv file. */
