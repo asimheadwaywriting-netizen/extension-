@@ -9,8 +9,11 @@ Click the toolbar icon, press **Extract profiles from this page**, and the
 extension injects a one-shot content script into the active tab. That script
 walks the anchors already in the DOM, keeps the ones pointing at
 `linkedin.com/in/<slug>`, strips tracking parameters, pairs each URL with the
-best name it can find nearby, and de-duplicates by URL. Results can be copied
-as CSV or downloaded as `name,url`.
+best name it can find nearby, and de-duplicates by URL.
+
+Results can be copied for a spreadsheet (tab-separated, so Google Sheets and
+Excel split them into a name column and a url column on paste) or downloaded as
+a `name,url` CSV file.
 
 ## What it deliberately does not do
 
@@ -26,7 +29,7 @@ as CSV or downloaded as `name,url`.
 | --- | --- |
 | `activeTab` | Read the tab you are looking at, only after you click |
 | `scripting` | Inject the extraction script on that click |
-| `clipboardWrite` | "Copy as CSV" |
+| `clipboardWrite` | "Copy for spreadsheet" |
 | `*://*.linkedin.com/*` | Limits the extension to LinkedIn pages |
 
 `tabs`, `webRequest`, and broad host permissions are intentionally not requested.
@@ -44,7 +47,7 @@ as CSV or downloaded as `name,url`.
 ```
 manifest.json       MV3 manifest
 popup.html          UI: extract button, results list, export buttons
-popup.js            Popup logic: injection, rendering, CSV copy/download
+popup.js            Popup logic: injection, rendering, clipboard/CSV export
 content-script.js   DOM-only extraction, injected on click
 icon.png            Toolbar icon
 ```

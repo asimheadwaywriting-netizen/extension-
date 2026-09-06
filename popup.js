@@ -55,9 +55,34 @@ function csvField(value) {
   return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 }
 
+/**
+ * Tab-separated fields cannot be quoted reliably across spreadsheets, so any
+ * tab or line break inside a value is flattened to a space instead.
+ */
+function tsvField(value) {
+  return String(value == null ? "" : value).replace(/[\t\r\n]+/g, " ").trim();
+}
+
+function tableRows(rows) {
+  return [["name", "url"], ...rows.map((r) => [r.name, r.url])];
+}
+
+/** For the downloaded .csv file. */
 function toCsv(rows) {
-  const lines = [["name", "url"], ...rows.map((r) => [r.name, r.url])];
-  return lines.map((cells) => cells.map(csvField).join(",")).join("\r\n");
+  return tableRows(rows)
+    .map((cells) => cells.map(csvField).join(","))
+    .join("\r\n");
+}
+
+/**
+ * For the clipboard. Spreadsheets (Sheets, Excel, Numbers) split pasted text on
+ * tabs, so this lands as two columns; a comma-separated paste would pile the
+ * whole row into one cell.
+ */
+function toTsv(rows) {
+  return tableRows(rows)
+    .map((cells) => cells.map(tsvField).join("\t"))
+    .join("\r\n");
 }
 
 function timestampedFilename() {
@@ -165,9 +190,11 @@ async function extract() {
 
 async function handleCopy() {
   if (profiles.length === 0) return;
-  const ok = await copyToClipboard(toCsv(profiles));
+  const ok = await copyToClipboard(toTsv(profiles));
   setStatus(
-    ok ? `Copied ${profiles.length} rows as CSV.` : "Could not copy to clipboard.",
+    ok
+      ? `Copied ${profiles.length} rows - paste into a spreadsheet for two columns.`
+      : "Could not copy to clipboard.",
     !ok
   );
 }
