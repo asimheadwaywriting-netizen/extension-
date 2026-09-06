@@ -13,7 +13,10 @@ const downloadButton = document.getElementById("download");
 const statusEl = document.getElementById("status");
 const resultsEl = document.getElementById("results");
 
-/** @type {{name: string, headline: string, url: string}[]} */
+/**
+ * @type {{name: string, url: string, company: string, designation: string,
+ *   headline: string}[]}
+ */
 let profiles = [];
 
 function setStatus(message, isError = false) {
@@ -42,12 +45,19 @@ function render() {
     url.textContent = profile.url;
 
     item.append(name);
-    if (profile.headline) {
+
+    // Show the split when we have it, the raw headline when we do not.
+    const detail = [profile.designation, profile.company]
+      .filter(Boolean)
+      .join(" - ");
+    const subtitle = detail || profile.headline;
+    if (subtitle) {
       const headline = document.createElement("span");
       headline.className = "headline";
-      headline.textContent = profile.headline;
+      headline.textContent = subtitle;
       item.append(headline);
     }
+
     item.append(url);
     fragment.append(item);
   }
@@ -71,10 +81,17 @@ function tsvField(value) {
 }
 
 function tableRows(rows) {
-  // headline is appended last so name/url keep the columns they always had.
+  // name/url keep the columns they always had; the raw headline trails last as
+  // a fallback for the rows where the designation/company split reads oddly.
   return [
-    ["name", "url", "headline"],
-    ...rows.map((r) => [r.name, r.url, r.headline || ""]),
+    ["name", "url", "company", "designation", "headline"],
+    ...rows.map((r) => [
+      r.name,
+      r.url,
+      r.company || "",
+      r.designation || "",
+      r.headline || "",
+    ]),
   ];
 }
 

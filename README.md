@@ -10,12 +10,26 @@ extension injects a one-shot content script into the active tab. That script
 walks the anchors already in the DOM, keeps the ones pointing at
 `linkedin.com/in/<slug>`, strips tracking parameters, pairs each URL with the
 best name it can find nearby, picks up the headline shown on the result card
-("Director & Chief Executive Officer (CEO) @ Axentra Ltd."), and de-duplicates
-by URL.
+("Chief Operating Officer @ Roister"), splits that into a designation and a
+company, and de-duplicates by URL.
+
+It covers two cases:
+
+- **A list of people** - search results, "more profiles for you", connections.
+  Every profile rendered on the page comes back in one click.
+- **One person's profile** - when the open page is `linkedin.com/in/<slug>`,
+  that person leads the results, with the company taken from the top card's
+  "Current company" control rather than guessed from the headline. The other
+  profiles the page links to follow.
 
 Results can be copied for a spreadsheet (tab-separated, so Google Sheets and
-Excel split them into name / url / headline columns on paste) or downloaded as a
-`name,url,headline` CSV file.
+Excel split them into columns on paste) or downloaded as a CSV file. The columns
+are `name`, `url`, `company`, `designation`, `headline` - the raw headline
+trails last as a fallback for rows where the split reads oddly.
+
+The company *website* is deliberately absent: it is not on the profile page, and
+fetching it would mean visiting the company page, which this extension does not
+do.
 
 ## What it deliberately does not do
 
