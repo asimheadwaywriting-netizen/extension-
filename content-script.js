@@ -295,81 +295,6 @@
     return { designation: trim(headline), company: "" };
   };
 
-  /**
-   * The company named in a profile's top card. LinkedIn labels that control
-   * "Current company: Roister ..." for screen readers, which survives class
-   * name churn; the company link is the backup.
-   */
-  const currentCompany = (scope) => {
-    const labelled = scope.querySelector('[aria-label*="Current company" i]');
-    if (labelled) {
-      const label = clean(labelled.getAttribute("aria-label"));
-      const after = label.replace(/^.*current company:?\s*/i, "");
-      const value = polish(after.split(/[.,]|\s+click\b/i)[0]);
-      if (value) return value;
-      const text = polish(nameFromText(labelled));
-      if (text) return text;
-    }
-
-    const link = scope.querySelector('a[href*="/company/"]');
-    if (link) {
-      const text = polish(nameFromText(link));
-      if (text && looksLikeHeadline(text)) return text;
-    }
-
-    return "";
-  };
-
-  /**
-   * When the open page IS somebody's profile, that person is the point of the
-   * click - so they lead the results, ahead of the sidebar suggestions and
-   * mutual connections that also live on the page.
-   */
-  const profileOwner = () => {
-    const path = location.pathname.match(/^\/in\/([^/]+)/);
-    if (!path) return null;
-
-    let slug;
-    try {
-      slug = decodeURIComponent(path[1]);
-    } catch (err) {
-      slug = path[1];
-    }
-    if (!slug) return null;
-
-    const url = `https://www.linkedin.com/in/${slug}`;
-    const main = document.querySelector("main") || document.body;
-
-    const h1 = main.querySelector("h1") || document.querySelector("h1");
-    const name = h1 ? polish(nameFromText(h1) || clean(h1.textContent)) : "";
-
-    // The top card is the section around the name; fall back to main.
-    const topCard = (h1 && h1.closest("section")) || main;
-
-    let headline = "";
-    for (const raw of textBlocks(topCard)) {
-      const line = polish(raw);
-      if (!line) continue;
-      if (name && (line === name || line.startsWith(name))) continue;
-      if (looksLikeHeadline(line)) {
-        headline = line;
-        break;
-      }
-    }
-
-    const parts = splitHeadline(headline);
-    const company = currentCompany(topCard) || parts.company;
-
-    return {
-      name,
-      headline,
-      designation: parts.designation,
-      company,
-      url,
-      owner: true,
-    };
-  };
-
   const results = [];
   const seen = new Map(); // url -> index in results
 
@@ -378,17 +303,6 @@
     anchors = document.querySelectorAll('a[href*="/in/"]');
   } catch (err) {
     return { ok: false, error: "Could not read the page DOM.", profiles: [] };
-  }
-
-  // On a profile page the owner leads, then everyone else the page links to.
-  try {
-    const owner = profileOwner();
-    if (owner) {
-      seen.set(owner.url, results.length);
-      results.push(owner);
-    }
-  } catch (err) {
-    // No owner row - carry on with the links alone.
   }
 
   for (const anchor of anchors) {
@@ -421,7 +335,6 @@
         designation: parts.designation,
         company: parts.company,
         url,
-        owner: false,
       });
     } catch (err) {
       // Malformed node - skip it and keep going.
@@ -429,10 +342,5 @@
     }
   }
 
-  return {
-    ok: true,
-    profiles: results,
-    isProfilePage: /^\/in\//.test(location.pathname),
-    pageUrl: location.href,
-  };
+  return { ok: true, profiles: results, pageUrl: location.href };
 })();

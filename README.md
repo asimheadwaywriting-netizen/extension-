@@ -13,16 +13,8 @@ best name it can find nearby, picks up the headline shown on the result card
 ("Chief Operating Officer @ Roister"), splits that into a designation and a
 company, and de-duplicates by URL.
 
-It covers two cases:
-
-- **A list of people** - search results, "more profiles for you", connections.
-  Every profile rendered on the page comes back in one click.
-- **One person's profile** - when the open page is `linkedin.com/in/<slug>`,
-  you get that person and nobody else: the sidebar suggestions, mutual
-  connections and "people also viewed" links the page is full of stay out of
-  the way. Their company comes from the top card's "Current company" control
-  rather than being guessed from the headline. A checkbox reveals everyone
-  else on the page when you do want them.
+It is built for lists of people - search results, "more profiles for you",
+connections. Every profile rendered on the page comes back in one click.
 
 Results can be copied for a spreadsheet (tab-separated, so Google Sheets and
 Excel split them into columns on paste) or downloaded as a CSV file. The columns
@@ -80,7 +72,8 @@ anchor text, then `aria-label` / `title` / image `alt`, then a nearby heading.
 Headlines are read only from genuine result cards (list items), and only from
 text that is not itself a link - so mutual-connection names, "Connect" buttons
 and connection-degree badges stay out. On layouts without cards, such as the
-feed, the headline is left empty rather than guessed at.
+feed or a single profile page, the headline is left empty rather than guessed
+at.
 
 Entries that cannot be parsed are skipped silently; a profile whose name or
 headline cannot be found is still listed with that field empty rather than
